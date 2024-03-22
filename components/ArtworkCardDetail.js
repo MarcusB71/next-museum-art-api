@@ -3,11 +3,31 @@ import useSWR from 'swr';
 import Error from 'next/error';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useState } from 'react';
+import { useAtom } from 'jotai';
+import { favouritesAtom } from '@/pages/store';
 
 const ArtworkCardDetail = ({ objectID }) => {
+  const [favouritesList, setFavouritesList] = useAtom(favouritesAtom);
+  const [showAdded, setShowAdded] = useState(
+    favouritesList.includes(objectID) ? true : false
+  );
+
+  const favouritesClicked = () => {
+    if (showAdded) {
+      setFavouritesList((current) => current.filter((fav) => fav != objectID));
+      setShowAdded(false);
+    } else {
+      setFavouritesList((current) => [...current, objectID]);
+      setShowAdded(true);
+    }
+  };
   const router = useRouter();
+
   const { data, error, isLoading } = useSWR(
-    `https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectID}`
+    objectID
+      ? `https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectID}`
+      : null
   );
   if (error) return <Error statusCode={404} />;
   if (isLoading) return null;
@@ -58,7 +78,6 @@ const ArtworkCardDetail = ({ objectID }) => {
             {data.dimensions || 'N/A'}
           </p>
         </Card.Text>
-
         <Button
           variant="primary"
           onClick={() => {
@@ -66,6 +85,12 @@ const ArtworkCardDetail = ({ objectID }) => {
           }}
         >
           <strong>Back</strong>
+        </Button>
+        <Button
+          onClick={favouritesClicked}
+          variant={showAdded ? 'primary' : 'outline-primary'}
+        >
+          {showAdded ? `+ Favourite (added)` : `+ Favourite`}
         </Button>
       </Card.Body>
     </Card>
